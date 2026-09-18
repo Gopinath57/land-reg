@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}BhumiSetu - Land Record Digitization Portal{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 3rem 1rem 2.5rem;">
+  <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.4rem 1rem; margin-bottom: 1rem;">Official Cadastral Management</span>
+  <h1 style="font-size: 2.75rem; font-weight: 800; color: var(--primary); margin-bottom: 0.85rem; line-height: 1.2;">
+    Land Record Digitization & Verification System
+  </h1>
+  <p style="font-size: 1.15rem; color: var(--text-muted); max-width: 780px; margin: 0 auto 2rem;">
+    Automated title deed OCR extraction, real-time spatial and cadastral duplicate detection, discrepancy comparison, and role-based officer verification workflow.
+  </p>
+  <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 3.5rem;">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">&#128274; Sign In to Officer Portal</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 3rem;">
+  <div class="card-header">
+    <h3 class="card-title">&#128101; Instant Demo Accounts (Click to Fill Credentials)</h3>
+  </div>
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+        <span class="role-pill role-admin">Administrator</span>
+        <h4 style="margin: 0.75rem 0 0.25rem; font-size: 1.1rem;">Full Administrative Authority</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">System configuration, user provisioning, global registry audits, duplicate resolutions.</p>
+        <p style="font-size: 0.85rem; font-family: monospace; background: white; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          Login: <b>admin@example.com</b><br>
+          Pass: <b>Demo@123</b>
+        </p>
+        <a href="{{ url_for('auth.login') }}?email=admin@example.com" class="btn btn-sm btn-primary" style="width: 100%;">Login as Administrator</a>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+        <span class="role-pill role-revenue">Revenue Officer</span>
+        <h4 style="margin: 0.75rem 0 0.25rem; font-size: 1.1rem;">Digitization & Registry</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Upload physical deeds, run OCR text extraction, digitize records, resolve field discrepancies.</p>
+        <p style="font-size: 0.85rem; font-family: monospace; background: white; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          Login: <b>revenue@example.com</b><br>
+          Pass: <b>Demo@123</b>
+        </p>
+        <a href="{{ url_for('auth.login') }}?email=revenue@example.com" class="btn btn-sm btn-primary" style="width: 100%;">Login as Revenue Officer</a>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+        <span class="role-pill role-verify">Verification Officer</span>
+        <h4 style="margin: 0.75rem 0 0.25rem; font-size: 1.1rem;">Verification & Title Clearance</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Review pending parcels, verify 30-year chain of title, validate boundaries, approve or reject.</p>
+        <p style="font-size: 0.85rem; font-family: monospace; background: white; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          Login: <b>verify@example.com</b><br>
+          Pass: <b>Demo@123</b>
+        </p>
+        <a href="{{ url_for('auth.login') }}?email=verify@example.com" class="btn btn-sm btn-primary" style="width: 100%;">Login as Verification Officer</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #eff6ff; color: #1e40af;">&#128196;</div>
+    <div class="stat-info">
+      <div class="stat-value">OCR Engine</div>
+      <div class="stat-label">Instant deed parsing & field auto-mapping</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fdf2f8; color: #9d174d;">&#128269;</div>
+    <div class="stat-info">
+      <div class="stat-value">Duplicate Scan</div>
+      <div class="stat-label">Identifies Khasra collisions & boundary overlaps</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #f0fdf4; color: #166534;">&#9878;</div>
+    <div class="stat-info">
+      <div class="stat-value">Comparator</div>
+      <div class="stat-label">Side-by-side deed vs registry diff analyzer</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fefce8; color: #854d0e;">&#128220;</div>
+    <div class="stat-info">
+      <div class="stat-value">Audit Trail</div>
+      <div class="stat-label">Immutable activity logging for compliance</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

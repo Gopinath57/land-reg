@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Deed Upload & OCR Engine{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Document Library & OCR Engine</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Upload scanned physical deeds, patta certificates, or maps for automatic text extraction</p>
+  </div>
+  {% if current_user.is_revenue_officer or current_user.is_admin %}
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="{{ url_for('documents.generate_sample', type='deed') }}" class="btn btn-secondary">&#9874; Generate Sample Deed</a>
+    <a href="{{ url_for('documents.generate_sample', type='patta') }}" class="btn btn-secondary">&#9874; Generate Sample Patta</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Upload Box -->
+{% if current_user.is_revenue_officer or current_user.is_admin %}
+<div class="card" style="margin-bottom: 2rem; border: 2px dashed var(--primary);">
+  <div class="card-header" style="background: var(--primary-light);">
+    <h3 class="card-title" style="color: var(--primary);">&#128228; Upload Title Deed or Patta Document</h3>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('documents.upload_document') }}" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Select Document File (PDF, PNG, JPG, JPEG, TIFF, TXT) *</label>
+          <input type="file" name="file" class="form-control" required accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.txt">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Document Classification *</label>
+          <select name="file_type" class="form-control">
+            <option value="Sale Deed">Registered Sale Deed</option>
+            <option value="Patta Certificate">Patta Allotment Certificate</option>
+            <option value="Mutation Order">Mutation Revenue Order</option>
+            <option value="Cadastral Map">Cadastral / Survey Map</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Link to Existing Parcel (Optional)</label>
+          <select name="record_id" class="form-control">
+            <option value="">-- Create New Record Later --</option>
+            {% for r in records %}
+            <option value="{{ r.id }}" {% if request.args.get('record_id')|int == r.id %}selected{% endif %}>
+              {{ r.parcel_id }} (Khasra: {{ r.khasra_number }}, {{ r.owner_name }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">&#9432; OCR engine automatically analyzes document text and structures entities into land record fields.</span>
+        <button type="submit" class="btn btn-primary btn-lg">&#128640; Upload & Extract OCR</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Document Archive Table -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">&#128193; Uploaded Deeds Repository</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>File Name</th>
+          <th>Type</th>
+          <th>Size</th>
+          <th>Linked Parcel</th>
+          <th>OCR Status</th>
+          <th>Confidence</th>
+          <th>Uploaded Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td>#{{ doc.id }}</td>
+          <td><b>{{ doc.original_filename }}</b></td>
+          <td>{{ doc.file_type }}</td>
+          <td>{{ doc.file_size_kb }} KB</td>
+          <td>
+            {% if doc.record %}
+            <a href="{{ url_for('records.view_record', record_id=doc.record.id) }}"><b>{{ doc.record.parcel_id }}</b></a>
+            {% else %}
+            <span style="color: var(--text-muted); font-size: 0.8rem;">Unlinked</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {% if doc.ocr_status == 'Completed' %}badge-success{% elif doc.ocr_status == 'Processing' %}badge-warning{% else %}badge-danger{% endif %}">
+              {{ doc.ocr_status }}
+            </span>
+          </td>
+          <td><b>{{ doc.ocr_confidence }}%</b></td>
+          <td>{{ doc.created_at|format_date }}</td>
+          <td>
+            <a href="{{ url_for('documents.ocr_result', document_id=doc.id) }}" class="btn btn-sm btn-primary">OCR Results</a>
+            <a href="{{ url_for('documents.download_file', document_id=doc.id) }}" class="btn btn-sm btn-secondary" target="_blank">View File</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No documents uploaded yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

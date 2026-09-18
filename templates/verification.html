@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Officer Verification Workstation{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Verification Officer Queue</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Review pending land parcels, validate chain of title, examine duplicate risks and approve records</p>
+  </div>
+</div>
+
+<div class="stat-grid" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fef3c7; color: #b45309;">&#8987;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ pending_records|length }}</div>
+      <div class="stat-label">Awaiting Verification</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #ede9fe; color: #6d28d9;">&#9888;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ flagged_duplicates|length }}</div>
+      <div class="stat-label">Duplicate Collisions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #ffedd5; color: #c2410c;">&#9878;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ flagged_mismatches|length }}</div>
+      <div class="stat-label">Deed Mismatches</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #dcfce7; color: #15803d;">&#10004;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ verified_records|length }}</div>
+      <div class="stat-label">Verified (Recent)</div>
+    </div>
+  </div>
+</div>
+
+<!-- Pending Review Table -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header" style="background: #fef3c7;">
+    <h3 class="card-title" style="color: #92400e;">&#8987; Parcels Awaiting Officer Review</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Parcel ID</th>
+          <th>Khasra #</th>
+          <th>Owner Name</th>
+          <th>Village / Tehsil</th>
+          <th>Area (Acres)</th>
+          <th>Valuation</th>
+          <th>Duplicate Risk</th>
+          <th>Date Submitted</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in pending_records %}
+        <tr>
+          <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}"><b>{{ rec.parcel_id }}</b></a></td>
+          <td><b>{{ rec.khasra_number }}</b></td>
+          <td>{{ rec.owner_name }}</td>
+          <td>{{ rec.village }}, {{ rec.district }}</td>
+          <td>{{ rec.area_acres }} Ac</td>
+          <td>{{ rec.market_value|currency }}</td>
+          <td><span class="badge {{ rec.duplicate_risk|risk_badge }}">{{ rec.duplicate_risk }}</span></td>
+          <td>{{ rec.created_at|format_date }}</td>
+          <td>
+            <a href="{{ url_for('verification.review_record', record_id=rec.id) }}" class="btn btn-sm btn-primary">&#9989; Review & Verify</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Queue clear! No pending verifications right now.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Flagged Duplicates & Mismatches Section -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <div class="card">
+    <div class="card-header" style="background: #ede9fe;">
+      <h3 class="card-title" style="color: #5b21b6;">&#9888; Flagged Duplicate Records</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Parcel ID</th>
+            <th>Khasra #</th>
+            <th>Owner</th>
+            <th>Collision Note</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in flagged_duplicates %}
+          <tr>
+            <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}"><b>{{ rec.parcel_id }}</b></a></td>
+            <td>{{ rec.khasra_number }}</td>
+            <td>{{ rec.owner_name }}</td>
+            <td style="font-size: 0.8rem; color: #b91c1c;">{{ rec.duplicate_notes }}</td>
+            <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}" class="btn btn-sm btn-secondary">Inspect</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No duplicate conflicts flagged.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="background: #ffedd5;">
+      <h3 class="card-title" style="color: #9a3412;">&#9878; Flagged Deed Mismatches</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Parcel ID</th>
+            <th>Khasra #</th>
+            <th>Owner</th>
+            <th>Mismatch Notes</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in flagged_mismatches %}
+          <tr>
+            <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}"><b>{{ rec.parcel_id }}</b></a></td>
+            <td>{{ rec.khasra_number }}</td>
+            <td>{{ rec.owner_name }}</td>
+            <td style="font-size: 0.8rem; color: #c2410c;">{{ rec.mismatch_notes }}</td>
+            <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}" class="btn btn-sm btn-secondary">Inspect</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No record mismatches reported.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

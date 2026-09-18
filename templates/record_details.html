@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Parcel {{ record.parcel_id }} - Land Record Details{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+      <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--primary);">Parcel {{ record.parcel_id }}</h1>
+      <span class="badge {{ record.status|status_badge }}" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">{{ record.status }}</span>
+      <span class="badge {{ record.duplicate_risk|risk_badge }}" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">Dup Risk: {{ record.duplicate_risk }}</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Khasra No: <b>{{ record.khasra_number }}</b> | Survey No: <b>{{ record.survey_number }}</b> | Village: <b>{{ record.village }}</b>, District: <b>{{ record.district }}</b>
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <form method="POST" action="{{ url_for('records.scan_duplicates_action', record_id=record.id) }}" style="display: inline;">
+      <button type="submit" class="btn btn-secondary">&#128269; Scan Duplicates</button>
+    </form>
+    {% if current_user.is_revenue_officer or current_user.is_admin %}
+    <a href="{{ url_for('records.edit_record', record_id=record.id) }}" class="btn btn-secondary">&#9998; Edit</a>
+    {% endif %}
+    {% if current_user.is_admin %}
+    <form method="POST" action="{{ url_for('records.delete_record', record_id=record.id) }}" onsubmit="return confirm('Permanently delete this record?');" style="display: inline;">
+      <button type="submit" class="btn btn-danger">&#128465; Delete</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Duplicate Risk Warning Alert if High or Medium -->
+{% if dup_scan and dup_scan.risk_level in ['High', 'Medium'] %}
+<div class="alert alert-danger" style="display: block; margin-bottom: 1.5rem;">
+  <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; margin-bottom: 0.4rem;">
+    <span>&#9888; CADASTRAL DUPLICATE / OVERLAP WARNING (Risk: {{ dup_scan.risk_level }} - {{ dup_scan.highest_score }}%)</span>
+  </div>
+  <p style="margin-bottom: 0.5rem;">{{ dup_scan.summary }}</p>
+  <div style="background: white; border-radius: var(--radius-sm); padding: 0.75rem; border: 1px solid #fecaca;">
+    <b>Matching Records in Registry:</b>
+    <ul style="margin-left: 1.25rem; margin-top: 0.35rem; font-size: 0.875rem;">
+      {% for m in dup_scan.matches %}
+      <li style="margin-bottom: 0.35rem;">
+        <a href="{{ url_for('records.view_record', record_id=m.record_id) }}"><b>Parcel {{ m.parcel_id }}</b></a>
+        - Khasra: {{ m.khasra_number }}, Owner: {{ m.owner_name }}, Village: {{ m.village }}
+        <span class="badge badge-danger" style="margin-left: 0.5rem;">{{ m.score }}% Match</span>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Reasons: {{ m.reasons|join(', ') }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+<!-- Verification Decision Box (if in Verification Mode) -->
+{% if verification_mode or (current_user.is_verification_officer and record.status == 'Pending Verification') %}
+<div class="card" style="border: 2px solid #3b82f6; margin-bottom: 2rem;">
+  <div class="card-header" style="background: #eff6ff;">
+    <h3 class="card-title" style="color: #1e40af;">&#9989; Verification Officer Decision Portal</h3>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('verification.review_record', record_id=record.id) }}">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+          <input type="checkbox" name="title_chain_verified" value="1" checked> 30-Year Title Chain Validated
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+          <input type="checkbox" name="boundaries_verified" value="1" checked> Cadastral Map & Boundaries Match
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+          <input type="checkbox" name="encumbrance_free" value="1" checked> Encumbrance-Free Certificate
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+          <input type="checkbox" name="ocr_match_verified" value="1"> Deed OCR Discrepancy Verified
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+          <input type="checkbox" name="duplicate_checked" value="1"> Duplicate Scan Cleared
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Officer Audit Remarks / Verification Notes (Required):</label>
+        <textarea name="remarks" class="form-control" rows="2" placeholder="Detail the basis of clearance or reason for rejection/clarification..." required></textarea>
+      </div>
+
+      <div style="display: flex; gap: 1rem;">
+        <button type="submit" name="action" value="Approved" class="btn btn-success">&#10004; Approve & Formally Verify</button>
+        <button type="submit" name="action" value="Needs Clarification" class="btn btn-secondary">&#8635; Request Clarification</button>
+        <button type="submit" name="action" value="Rejected" class="btn btn-danger">&#10008; Reject Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Record Information & Boundaries Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#128220; Parcel & Ownership Details</h3>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Primary Owner</span>
+          <b style="font-size: 1.05rem;">{{ record.owner_name }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Father / Husband Name</span>
+          <b>{{ record.father_or_husband_name or '-' }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Co-Owners</span>
+          <b>{{ record.co_owners or 'None (Single Owner)' }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Masked Aadhaar</span>
+          <b style="font-family: monospace;">{{ record.aadhaar_masked or 'Not Provided' }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Land Type</span>
+          <span class="badge badge-secondary">{{ record.land_type }}</span>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Total Area</span>
+          <b>{{ record.area_acres }} Acres</b> ({{ "{:,.1f}".format(record.area_sqft or 0) }} Sq. Ft.)
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Estimated Valuation</span>
+          <b style="color: var(--primary); font-size: 1.1rem;">{{ record.market_value|currency }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Mutation Registration No.</span>
+          <b>{{ record.mutation_number or 'Pending Allotment' }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Registration Date</span>
+          <b>{{ record.registration_date|format_date }}</b>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Recorded By</span>
+          <b>{{ record.creator.name }} ({{ record.creator.role }})</b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#129517; Boundary Description</h3>
+    </div>
+    <div class="card-body">
+      <div style="margin-bottom: 0.85rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">North (Border)</span>
+        <div style="background: #f8fafc; padding: 0.45rem 0.65rem; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.9rem;">
+          {{ record.north_boundary or 'Not mapped' }}
+        </div>
+      </div>
+      <div style="margin-bottom: 0.85rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">South (Border)</span>
+        <div style="background: #f8fafc; padding: 0.45rem 0.65rem; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.9rem;">
+          {{ record.south_boundary or 'Not mapped' }}
+        </div>
+      </div>
+      <div style="margin-bottom: 0.85rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">East (Border)</span>
+        <div style="background: #f8fafc; padding: 0.45rem 0.65rem; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.9rem;">
+          {{ record.east_boundary or 'Not mapped' }}
+        </div>
+      </div>
+      <div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">West (Border)</span>
+        <div style="background: #f8fafc; padding: 0.45rem 0.65rem; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.9rem;">
+          {{ record.west_boundary or 'Not mapped' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Comparison with Linked Document OCR (if any) -->
+{% if comparator_result %}
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h3 class="card-title">&#9878; Physical Deed OCR vs Registry Comparison</h3>
+    <span class="badge {% if comparator_result.overall_score >= 90 %}badge-success{% elif comparator_result.overall_score >= 70 %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 0.85rem;">
+      {{ comparator_result.overall_score }}% Match Confidence
+    </span>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Attribute Field</th>
+          <th>Registry Record Value</th>
+          <th>Physical Deed (OCR Extracted)</th>
+          <th>Status</th>
+          <th>Similarity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in comparator_result.field_comparisons %}
+        <tr>
+          <td><b>{{ comp.field }}</b></td>
+          <td>{{ comp.record_value }}</td>
+          <td>{{ comp.doc_value }}</td>
+          <td>
+            {% if comp.status == 'MATCH' %}
+            <span class="badge badge-success">&#10004; Match</span>
+            {% elif comp.status == 'MINOR_MISMATCH' %}
+            <span class="badge badge-warning">&#9888; Minor Variance</span>
+            {% else %}
+            <span class="badge badge-danger">&#10008; Discrepancy</span>
+            {% endif %}
+          </td>
+          <td><b>{{ comp.similarity }}%</b></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Linked Documents & History -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#128196; Attached Deeds & Documents</h3>
+      {% if current_user.is_revenue_officer or current_user.is_admin %}
+      <a href="{{ url_for('documents.upload_document') }}?record_id={{ record.id }}" class="btn btn-sm btn-primary">&#43; Attach Deed</a>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Document Name</th>
+            <th>Type</th>
+            <th>OCR Status</th>
+            <th>Confidence</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in record.documents %}
+          <tr>
+            <td><b>{{ doc.original_filename }}</b></td>
+            <td>{{ doc.file_type }}</td>
+            <td><span class="badge badge-info">{{ doc.ocr_status }}</span></td>
+            <td><b>{{ doc.ocr_confidence }}%</b></td>
+            <td>
+              <a href="{{ url_for('documents.ocr_result', document_id=doc.id) }}" class="btn btn-sm btn-secondary">OCR View</a>
+              <a href="{{ url_for('documents.download_file', document_id=doc.id) }}" class="btn btn-sm btn-secondary" target="_blank">File</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No documents attached yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#128221; Verification Decisions & Audit History</h3>
+    </div>
+    <div style="padding: 1rem; max-height: 350px; overflow-y: auto;">
+      {% for ver in record.verifications %}
+      <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+          <span class="badge {% if ver.status == 'Approved' %}badge-success{% elif ver.status == 'Rejected' %}badge-danger{% else %}badge-warning{% endif %}">
+            {{ ver.status }}
+          </span>
+          <small style="color: var(--text-muted);">{{ ver.verification_date|format_date('%d %b %Y, %H:%M') }}</small>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.2rem;">{{ ver.remarks }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Officer: {{ ver.verifier.name }} | {{ ver.checklist_summary() }}</div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No verifications submitted yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

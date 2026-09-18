@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Extraction Results - {{ document.original_filename }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">OCR Extraction Results</h1>
+      <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.3rem 0.7rem;">Confidence: {{ document.ocr_confidence }}%</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Document: <b>{{ document.original_filename }}</b> ({{ document.file_type }})</p>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    {% if not document.record_id %}
+    <a href="{{ url_for('records.create_record', doc_id=document.id, khasra_number=entities.khasra_number or '', survey_number=entities.survey_number or '', owner_name=entities.owner_name or '', father_or_husband_name=entities.father_or_husband_name or '', co_owners=entities.co_owners or '', district=entities.district or '', tehsil=entities.tehsil or '', village=entities.village or '', area_acres=entities.area_acres or '', market_value=entities.market_value or '', registration_date=entities.registration_date or '', north_boundary=entities.north_boundary or '', south_boundary=entities.south_boundary or '', east_boundary=entities.east_boundary or '', west_boundary=entities.west_boundary or '') }}" class="btn btn-success btn-lg">
+      &#10004; Digitize into Land Record
+    </a>
+    {% else %}
+    <a href="{{ url_for('records.view_record', record_id=document.record_id) }}" class="btn btn-primary">
+      &#128065; View Linked Parcel {{ document.record.parcel_id }}
+    </a>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('documents.trigger_ocr', document_id=document.id) }}" style="display: inline;">
+      <button type="submit" class="btn btn-secondary">&#8635; Re-run OCR</button>
+    </form>
+    <a href="{{ url_for('documents.download_file', document_id=document.id) }}" class="btn btn-secondary" target="_blank">&#128196; Open Document</a>
+  </div>
+</div>
+
+<!-- Side-by-side: Extracted structured entities vs Raw OCR text -->
+<div class="split-view">
+  <!-- Structured Entities Card -->
+  <div class="card">
+    <div class="card-header" style="background: #f0fdf4;">
+      <h3 class="card-title" style="color: #166534;">&#9989; Structured Entity Fields (Auto-Mapped)</h3>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Deed Number</span>
+          <b>{{ entities.deed_number or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Khasra Number</span>
+          <b style="color: var(--primary);">{{ entities.khasra_number or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Survey Number</span>
+          <b>{{ entities.survey_number or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Purchaser / Owner</span>
+          <b style="color: #15803d;">{{ entities.owner_name or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Father / Husband Name</span>
+          <b>{{ entities.father_or_husband_name or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Co-Owners</span>
+          <b>{{ entities.co_owners or 'None' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">District</span>
+          <b>{{ entities.district or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Tehsil</span>
+          <b>{{ entities.tehsil or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Village</span>
+          <b>{{ entities.village or 'Not Detected' }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Area in Acres</span>
+          <b>{{ entities.area_acres }} Acres</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Consideration Amount</span>
+          <b>{{ entities.market_value|currency }}</b>
+        </div>
+        <div style="padding: 0.5rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Registration Date</span>
+          <b>{{ entities.registration_date or 'Not Detected' }}</b>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.25rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Detected Boundary Schedule:</h4>
+        <div style="font-size: 0.85rem; background: #f8fafc; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); line-height: 1.6;">
+          <div><b>North:</b> {{ entities.north_boundary or 'Not Specified' }}</div>
+          <div><b>South:</b> {{ entities.south_boundary or 'Not Specified' }}</div>
+          <div><b>East:</b> {{ entities.east_boundary or 'Not Specified' }}</div>
+          <div><b>West:</b> {{ entities.west_boundary or 'Not Specified' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw OCR Text Output -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#128196; Raw Extracted Optical Text</h3>
+    </div>
+    <div class="card-body">
+      <pre style="background: #0f172a; color: #f8fafc; padding: 1.25rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.85rem; line-height: 1.5; max-height: 520px; overflow-y: auto; white-space: pre-wrap;">{{ document.extracted_text }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

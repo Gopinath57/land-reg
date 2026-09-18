@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Duplicate Land Records & Overlaps{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Cadastral Duplicate & Overlap Audit</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Automated spatial, Khasra, survey number, and owner similarity clash resolution</p>
+  </div>
+  {% if current_user.is_admin %}
+  <form method="POST" action="{{ url_for('admin.scan_all') }}">
+    <button type="submit" class="btn btn-primary">&#128269; Run Global Duplicate Scan</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="stat-grid" style="margin-bottom: 1.75rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fee2e2; color: #b91c1c;">&#9888;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ high_count }}</div>
+      <div class="stat-label">High Collision Risk (&ge;80%)</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fef3c7; color: #b45309;">&#9888;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ medium_count }}</div>
+      <div class="stat-label">Medium Overlap Risk (50-79%)</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #eff6ff; color: #1d4ed8;">&#128065;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ low_count }}</div>
+      <div class="stat-label">Low Similarity Risk</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">&#128269; All Flagged Duplicate Candidates</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Parcel ID</th>
+          <th>Khasra Number</th>
+          <th>Owner Name</th>
+          <th>Village / District</th>
+          <th>Area (Acres)</th>
+          <th>Risk Level</th>
+          <th>Collision Summary</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}"><b>{{ rec.parcel_id }}</b></a></td>
+          <td><b>{{ rec.khasra_number }}</b></td>
+          <td>{{ rec.owner_name }}</td>
+          <td>{{ rec.village }}, {{ rec.district }}</td>
+          <td>{{ rec.area_acres }} Ac</td>
+          <td><span class="badge {{ rec.duplicate_risk|risk_badge }}">{{ rec.duplicate_risk }}</span></td>
+          <td style="font-size: 0.825rem; color: #b91c1c; max-width: 320px;">
+            {{ rec.duplicate_notes or 'Potential overlap detected during automated scan' }}
+          </td>
+          <td><span class="badge {{ rec.status|status_badge }}">{{ rec.status }}</span></td>
+          <td>
+            <a href="{{ url_for('records.view_record', record_id=rec.id) }}" class="btn btn-sm btn-primary">Examine Diff</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No duplicates or overlapping parcels found in the registry.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

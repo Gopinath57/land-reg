@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{% if record %}Edit Parcel {{ record.parcel_id }}{% else %}Digitize New Land Record{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">
+        {% if record %}Edit Parcel {{ record.parcel_id }}{% else %}Digitize New Land Record{% endif %}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        {% if prefill and prefill.linked_document_id %}
+        Pre-populated with OCR entities extracted from uploaded deed document #{{ prefill.linked_document_id }}.
+        {% else %}
+        Enter official cadastral, revenue, and boundary survey coordinates.
+        {% endif %}
+      </p>
+    </div>
+    <a href="{{ url_for('records.list_records') }}" class="btn btn-secondary">&#8592; Back to Registry</a>
+  </div>
+
+  <form method="POST" action="{% if record %}{{ url_for('records.edit_record', record_id=record.id) }}{% else %}{{ url_for('records.create_record') }}{% endif %}">
+    {% if prefill and prefill.linked_document_id %}
+    <input type="hidden" name="linked_document_id" value="{{ prefill.linked_document_id }}">
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">&#128205; Cadastral Identifiers & Location</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="khasra_number">Khasra Number *</label>
+            <input type="text" id="khasra_number" name="khasra_number" class="form-control" required placeholder="e.g. 142/3 or 88/1A" value="{{ record.khasra_number if record else (prefill.khasra_number if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="survey_number">Survey Number *</label>
+            <input type="text" id="survey_number" name="survey_number" class="form-control" required placeholder="e.g. SRV-2024-88A" value="{{ record.survey_number if record else (prefill.survey_number if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="parcel_id">Unique Parcel ID (ULPIN / Govt ID)</label>
+            <input type="text" id="parcel_id" name="parcel_id" class="form-control" placeholder="Leave empty to auto-generate" value="{{ record.parcel_id if record else '' }}" {% if record %}readonly{% endif %}>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="district">District *</label>
+            <input type="text" id="district" name="district" class="form-control" required placeholder="e.g. Bhopal, Jaipur, Raipur" value="{{ record.district if record else (prefill.district if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tehsil">Tehsil / Sub-Division *</label>
+            <input type="text" id="tehsil" name="tehsil" class="form-control" required placeholder="e.g. Huzur, Malviya Nagar" value="{{ record.tehsil if record else (prefill.tehsil if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="village">Village / Mauza *</label>
+            <input type="text" id="village" name="village" class="form-control" required placeholder="e.g. Kolar, Chandanpur" value="{{ record.village if record else (prefill.village if prefill else '') }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">&#128100; Ownership Information</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="owner_name">Primary Owner / Pattedar Name *</label>
+            <input type="text" id="owner_name" name="owner_name" class="form-control" required placeholder="Full Name as in Deed" value="{{ record.owner_name if record else (prefill.owner_name if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="father_or_husband_name">Father / Husband Name</label>
+            <input type="text" id="father_or_husband_name" name="father_or_husband_name" class="form-control" placeholder="Relation Name" value="{{ record.father_or_husband_name if record else (prefill.father_or_husband_name if prefill else '') }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="co_owners">Co-Owners / Joint Holders</label>
+            <input type="text" id="co_owners" name="co_owners" class="form-control" placeholder="Comma-separated co-owners" value="{{ record.co_owners if record else (prefill.co_owners if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="aadhaar_masked">Masked Aadhaar Number</label>
+            <input type="text" id="aadhaar_masked" name="aadhaar_masked" class="form-control" placeholder="XXXX-XXXX-1234" value="{{ record.aadhaar_masked if record else '' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">&#128207; Land Specifications & Valuation</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="land_type">Land Use Classification</label>
+            <select id="land_type" name="land_type" class="form-control">
+              {% for lt in ['Agricultural', 'Residential', 'Commercial', 'Industrial', 'Government/Forest'] %}
+              <option value="{{ lt }}" {% if (record and record.land_type == lt) %}selected{% endif %}>{{ lt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="area_acres">Area in Acres *</label>
+            <input type="number" step="0.01" id="area_acres" name="area_acres" class="form-control" required placeholder="e.g. 2.45" value="{{ record.area_acres if record else (prefill.area_acres if prefill else '') }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="market_value">Registered Value (INR) *</label>
+            <input type="number" step="1000" id="market_value" name="market_value" class="form-control" required placeholder="e.g. 4500000" value="{{ record.market_value if record else (prefill.market_value if prefill else '') }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="mutation_number">Mutation / Patta Case Number</label>
+            <input type="text" id="mutation_number" name="mutation_number" class="form-control" placeholder="e.g. MUT-2024-819" value="{{ record.mutation_number if record else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="registration_date">Registration Date</label>
+            <input type="date" id="registration_date" name="registration_date" class="form-control" value="{{ record.registration_date.strftime('%Y-%m-%d') if (record and record.registration_date) else (prefill.registration_date if prefill else '') }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">&#129517; Surrounding Boundaries</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="north_boundary">North Boundary</label>
+            <input type="text" id="north_boundary" name="north_boundary" class="form-control" placeholder="Road, Neighbor, Survey..." value="{{ record.north_boundary if record else (prefill.north_boundary if prefill else '') }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="south_boundary">South Boundary</label>
+            <input type="text" id="south_boundary" name="south_boundary" class="form-control" placeholder="Road, Canal, Survey..." value="{{ record.south_boundary if record else (prefill.south_boundary if prefill else '') }}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="east_boundary">East Boundary</label>
+            <input type="text" id="east_boundary" name="east_boundary" class="form-control" placeholder="Field, Plot..." value="{{ record.east_boundary if record else (prefill.east_boundary if prefill else '') }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="west_boundary">West Boundary</label>
+            <input type="text" id="west_boundary" name="west_boundary" class="form-control" placeholder="School, Road..." value="{{ record.west_boundary if record else (prefill.west_boundary if prefill else '') }}">
+          </div>
+        </div>
+      </div>
+      <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <a href="{{ url_for('records.list_records') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">{% if record %}Save Changes{% else %}Save & Run Duplicate Check{% endif %}</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastral Intelligence & Reports{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Cadastral Analytics & Reports</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Statewide land parcel digitization, revenue audits, and verification turnaround reports</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="{{ url_for('reports.export_records_csv') }}" class="btn btn-primary">&#128229; Export Records (CSV)</a>
+    <a href="{{ url_for('reports.export_audit_csv') }}" class="btn btn-secondary">&#128229; Export Audit Trail (CSV)</a>
+  </div>
+</div>
+
+<div class="stat-grid" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #eff6ff; color: #1d4ed8;">&#127963;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_records }}</div>
+      <div class="stat-label">Total Parcels</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #dcfce7; color: #15803d;">&#10004;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ verified_records }}</div>
+      <div class="stat-label">Verified (Approved)</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #fef3c7; color: #b45309;">&#8987;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ pending_records }}</div>
+      <div class="stat-label">Pending Verification</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: #ede9fe; color: #6d28d9;">&#9888;</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ duplicate_records }}</div>
+      <div class="stat-label">Duplicate Flags</div>
+    </div>
+  </div>
+</div>
+
+<!-- District Breakdown Table -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h3 class="card-title">&#128202; District-Level Digitization Status</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>District</th>
+          <th>Total Parcels</th>
+          <th>Verified</th>
+          <th>Pending</th>
+          <th>Duplicate Flags</th>
+          <th>Total Area (Acres)</th>
+          <th>Total Market Valuation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in district_summary %}
+        <tr>
+          <td><b>{{ row[0] }}</b></td>
+          <td>{{ row[1] }}</td>
+          <td><span class="badge badge-success">{{ row[2] or 0 }}</span></td>
+          <td><span class="badge badge-warning">{{ row[3] or 0 }}</span></td>
+          <td>
+            {% if row[4] and row[4] > 0 %}
+            <span class="badge badge-danger">{{ row[4] }}</span>
+            {% else %}
+            <span class="badge badge-secondary">0</span>
+            {% endif %}
+          </td>
+          <td><b>{{ "{:,.2f}".format(row[5] or 0) }} Acres</b></td>
+          <td><b>{{ row[6]|currency }}</b></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No district data accumulated yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Land Type Summary -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">&#127793; Land Classification Breakdown</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Land Classification</th>
+          <th>Total Registered Parcels</th>
+          <th>Cumulative Area (Acres)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in type_summary %}
+        <tr>
+          <td><b>{{ t[0] }}</b></td>
+          <td>{{ t[1] }}</td>
+          <td><b>{{ "{:,.2f}".format(t[2] or 0) }} Acres</b></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No classification data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

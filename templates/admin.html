@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Administrative Console{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Administrative Control Console</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Officer account management, global registry scans, and compliance audit trail</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <form method="POST" action="{{ url_for('admin.scan_all') }}" style="display: inline;">
+      <button type="submit" class="btn btn-primary">&#128269; Trigger Global Duplicate Scan</button>
+    </form>
+  </div>
+</div>
+
+<!-- User Management Section -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#128100; Registered Revenue & Verification Officers</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td><b>{{ u.name }}</b></td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="role-pill {% if u.is_admin %}role-admin{% elif u.role == 'Verification Officer' %}role-verify{% else %}role-revenue{% endif %}">
+                {{ u.role }}
+              </span>
+            </td>
+            <td><small>{{ u.department }}</small></td>
+            <td>
+              <span class="badge {% if u.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                {% if u.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            </td>
+            <td>
+              {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-sm btn-secondary">
+                  {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+              {% else %}
+              <span style="font-size: 0.8rem; color: var(--text-muted);">(You)</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create New User Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">&#43; Provision New Officer</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('admin.create_user') }}">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" name="name" class="form-control" required placeholder="Officer Name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email ID *</label>
+          <input type="email" name="email" class="form-control" required placeholder="officer@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Initial Password *</label>
+          <input type="password" name="password" class="form-control" required placeholder="Temporary Password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">System Role *</label>
+          <select name="role" class="form-control">
+            <option value="Revenue Officer">Revenue Officer</option>
+            <option value="Verification Officer">Verification Officer</option>
+            <option value="Administrator">Administrator</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assigned Department</label>
+          <input type="text" name="department" class="form-control" placeholder="Revenue & Survey Dept" value="Land Revenue Dept">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Officer Account</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- System Audit Logs -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">&#128220; Comprehensive System Audit Trail</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action Type</th>
+          <th>Target Entity</th>
+          <th>Audit Details</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td>#{{ log.id }}</td>
+          <td>{{ log.timestamp|format_date('%Y-%m-%d %H:%M:%S') }}</td>
+          <td><b>{{ log.user.name if log.user else 'System' }}</b></td>
+          <td><span class="badge badge-secondary">{{ log.action }}</span></td>
+          <td>{{ log.entity_type or '-' }} {% if log.entity_id %}#{{ log.entity_id }}{% endif %}</td>
+          <td style="font-size: 0.85rem; max-width: 450px;">{{ log.details }}</td>
+          <td><code>{{ log.ip_address }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Deed OCR Discrepancies & Mismatches{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem; font-weight: 700; color: var(--primary);">Document Discrepancies & Mismatches</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Parcels where physical deed OCR entities differ from official revenue registry records</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="background: #ffedd5;">
+    <h3 class="card-title" style="color: #9a3412;">&#9878; Parcels with Detected Discrepancies</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Parcel ID</th>
+          <th>Khasra #</th>
+          <th>Owner Name</th>
+          <th>District</th>
+          <th>Area</th>
+          <th>Discrepancy Details</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td><a href="{{ url_for('records.view_record', record_id=rec.id) }}"><b>{{ rec.parcel_id }}</b></a></td>
+          <td><b>{{ rec.khasra_number }}</b></td>
+          <td>{{ rec.owner_name }}</td>
+          <td>{{ rec.district }}</td>
+          <td>{{ rec.area_acres }} Ac</td>
+          <td style="font-size: 0.825rem; color: #c2410c; max-width: 350px;">
+            {{ rec.mismatch_notes }}
+          </td>
+          <td><span class="badge {{ rec.status|status_badge }}">{{ rec.status }}</span></td>
+          <td>
+            <a href="{{ url_for('records.view_record', record_id=rec.id) }}" class="btn btn-sm btn-primary">Compare Side-by-Side</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No discrepancies found. All registry records align with uploaded deeds.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
