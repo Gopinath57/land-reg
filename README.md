@@ -132,3 +132,31 @@ land_record_digitization/
 +-- uploads/                   # Uploaded deed images & PDFs
 +-- reports/                   # Exported CSV reports
 ```
+
+---
+
+## ? Supabase Database Setup
+
+To persist all records on **Supabase** (PostgreSQL):
+
+### 1. Get your Supabase Connection String
+1. Open your [Supabase Dashboard](https://supabase.com/dashboard).
+2. Go to **Project Settings** &rarr; **Database** &rarr; **Connection String** &rarr; **URI**.
+3. Select **Mode: Session** or **Transaction** (Port `6543` or `5432`).
+4. Copy the URI:
+   ```
+   postgresql://postgres.[project-ref]:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres
+   ```
+
+### 2. Configure on Vercel
+1. Go to your **Vercel Project Dashboard** &rarr; **Settings** &rarr; **Environment Variables**.
+2. Add a new variable:
+   - **Key**: `DATABASE_URL`
+   - **Value**: Your Supabase connection string.
+3. Redeploy the project on Vercel. All tables and demo accounts are created automatically in Supabase!
+
+### 3. Migrate Existing Local Data to Supabase (Optional)
+Run the migration script locally to copy all existing records into your Supabase database:
+```powershell
+python migrate_to_supabase.py "postgresql://postgres.[project-ref]:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres"
+```

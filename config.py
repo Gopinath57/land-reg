@@ -24,10 +24,24 @@ else:
     UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
     REPORT_DIR = os.path.join(BASE_DIR, 'reports')
 
+# Database URL resolution (Supabase PostgreSQL or fallback SQLite)
+raw_db_url = os.environ.get('DATABASE_URL')
+if raw_db_url:
+    # Supabase gives postgres:// URLs; SQLAlchemy 2.0 requires postgresql://
+    if raw_db_url.startswith('postgres://'):
+        raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+    DATABASE_URI = raw_db_url
+else:
+    DATABASE_URI = f"sqlite:///{DB_PATH}"
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'land-record-secret-key-2026-auth-secure')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f"sqlite:///{DB_PATH}")
+    SQLALCHEMY_DATABASE_URI = DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300
+    } if not DATABASE_URI.startswith('sqlite') else {}
     UPLOAD_FOLDER = UPLOAD_DIR
     REPORT_FOLDER = REPORT_DIR
     MAX_CONTENT_LENGTH = 32 * 1024 * 1024
