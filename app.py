@@ -19,9 +19,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Ensure required directories exist
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['REPORT_FOLDER'], exist_ok=True)
+    # Ensure required directories exist (safely handle read-only environments like Vercel)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        os.makedirs(app.config['REPORT_FOLDER'], exist_ok=True)
+    except Exception:
+        pass
 
     # Initialize extensions
     db.init_app(app)
@@ -317,8 +320,14 @@ def seed_database(app):
 
 app = create_app()
 
+# Initialize tables and seed demo data on serverless/startup
+try:
+    with app.app_context():
+        seed_database(app)
+except Exception as _e:
+    pass
+
 if __name__ == '__main__':
-    seed_database(app)
     print("================================================================")
     print("   Land Record Digitization & Verification System Active")
     print("   Portal URL: http://127.0.0.1:5000")
